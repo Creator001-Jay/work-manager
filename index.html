@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="工作管理助手">
+<meta name="theme-color" content="#6BB5A0">
+<title>工作管理助手</title>
+<link rel="manifest" href="manifest-work.json">
+<style>
+:root{
+  --primary:#6BB5A0;
+  --primary-dark:#4A9580;
+  --primary-light:#A8D5C2;
+  --primary-bg:#E8F5EF;
+  --text:#2D3436;
+  --text-sub:#636E72;
+  --border:#DFE6E9;
+  --bg:#F5F8F7;
+  --white:#FFFFFF;
+  --danger:#FF7675;
+  --warning:#FDCB6E;
+  --info:#74B9FF;
+  --radius:12px;
+  --shadow:0 2px 12px rgba(0,0,0,.06);
+  --sidebar-w:220px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,textarea,select{font-family:inherit;outline:none}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ===== Layout ===== */
+.app{display:flex;height:100vh;height:100dvh}
+
+/* ===== Sidebar ===== */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:linear-gradient(180deg,var(--primary) 0%,var(--primary-dark) 100%);
+  display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top);
+}
+.sidebar-logo{
+  padding:24px 20px 20px;color:#fff;
+  font-size:18px;font-weight:700;
+  display:flex;align-items:center;gap:10px;
+}
+.sidebar-logo .icon{font-size:24px}
+.sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 20px;color:rgba(255,255,255,.8);
+  font-size:14px;font-weight:500;cursor:pointer;
+  transition:all .2s;border-left:3px solid transparent;
+}
+.nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-item.active{
+  background:rgba(255,255,255,.15);color:#fff;
+  border-left-color:#fff;
+}
+.nav-item .nav-icon{font-size:20px;flex-shrink:0}
+
+.sidebar-footer{
+  padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+  color:rgba(255,255,255,.5);font-size:11px;text-align:center;
+}
+
+/* ===== Main Content ===== */
+.content{
+  flex:1;overflow-y:auto;
+  padding:24px 28px;
+  padding-bottom:calc(24px + env(safe-area-inset-bottom));
+}
+.page{display:none;animation:fade .3s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.page-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:20px;flex-wrap:wrap;gap:12px;
+}
+.page-title{font-size:22px;font-weight:700;color:var(--text)}
+.page-subtitle{font-size:13px;color:var(--text-sub);margin-top:4px}
+
+/* ===== Buttons ===== */
+.btn{
+  padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;
+  transition:all .2s;display:inline-flex;align-items:center;gap:6px;
+}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{opacity:.85}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-icon{padding:6px 8px;border-radius:6px;background:transparent;color:var(--text-sub)}
+.btn-icon:hover{background:var(--primary-bg);color:var(--primary)}
+
+/* ===== Cards ===== */
+.card{
+  background:var(--white);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:20px;margin-bottom:16px;
+}
+.card-title{font-size:16px;font-weight:600;margin-bottom:12px}
+
+/* ===== Calendar ===== */
+.calendar-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:16px;flex-wrap:wrap;gap:8px;
+}
+.calendar-nav{display:flex;align-items:center;gap:12px}
+.calendar-nav h3{font-size:18px;font-weight:700;min-width:120px;text-align:center}
+.calendar-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+.calendar-weekdays div{text-align:center;font-size:12px;color:var(--text-sub);font-weight:600;padding:4px}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day{
+  min-height:80px;background:var(--white);border-radius:8px;
+  border:1px solid var(--border);padding:6px 8px;
+  cursor:pointer;transition:all .15s;position:relative;
+  display:flex;flex-direction:column;
+}
+.cal-day:hover{border-color:var(--primary);box-shadow:0 2px 8px rgba(107,181,160,.15)}
+.cal-day.other-month{opacity:.35}
+.cal-day.today{border-color:var(--primary);border-width:2px;background:var(--primary-bg)}
+.cal-day.has-schedule::after{
+  content:'';position:absolute;top:6px;right:6px;
+  width:7px;height:7px;background:var(--primary);border-radius:50%;
+}
+.cal-day-num{font-size:13px;font-weight:600;margin-bottom:2px}
+.cal-schedules{flex:1;overflow:hidden;font-size:11px}
+.cal-schedule-item{
+  background:var(--primary-bg);color:var(--primary-dark);
+  padding:1px 5px;border-radius:4px;margin-bottom:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ===== Guest ===== */
+.search-bar{
+  width:100%;padding:10px 16px;border:1px solid var(--border);
+  border-radius:8px;font-size:13px;margin-bottom:16px;
+  transition:border-color .2s;
+}
+.search-bar:focus{border-color:var(--primary)}
+.guest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.guest-card{
+  background:var(--white);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:16px;position:relative;
+  border-top:3px solid var(--primary);transition:transform .15s;
+}
+.guest-card:hover{transform:translateY(-2px)}
+.guest-name{font-size:16px;font-weight:700;margin-bottom:8px}
+.guest-info{font-size:13px;color:var(--text-sub);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.guest-info .label{color:var(--text-sub);min-width:70px;font-weight:500}
+.guest-info .value{color:var(--text);word-break:break-all}
+.guest-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+
+/* ===== Sports ===== */
+.filter-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.filter-bar .filter-label{font-size:12px;color:var(--text-sub);font-weight:600;margin-right:4px;white-space:nowrap}
+.filter-tab{
+  padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;
+  background:var(--white);border:1px solid var(--border);color:var(--text-sub);
+  cursor:pointer;transition:all .2s;
+}
+.filter-tab:hover{border-color:var(--primary)}
+.filter-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.filter-tab .badge{font-size:11px;opacity:.7;margin-left:2px}
+.sports-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.sport-card{
+  background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px;border-left:4px solid var(--primary);
+}
+.sport-card h4{font-size:15px;font-weight:600;margin-bottom:6px}
+.sport-card .age-range{font-size:12px;color:var(--primary);font-weight:500;margin-bottom:8px}
+.sport-card .tag-row{margin-bottom:6px;display:flex;flex-wrap:wrap;gap:4px}
+.sport-card .cat-tag{
+  display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
+  background:var(--primary-bg);color:var(--primary-dark);
+}
+.sport-card .venue-tag{
+  display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
+  font-weight:500;
+}
+.sport-card .venue-indoor{background:#E3F2FD;color:#1976D2}
+.sport-card .venue-outdoor{background:#E8F5E9;color:#388E3C}
+.sport-card .equip-tag{
+  display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
+  font-weight:500;
+}
+.sport-card .equip-none{background:#FFF3E0;color:#E65100}
+.sport-card .equip-need{background:#F3E5F5;color:#7B1FA2}
+.sport-card .meta-row{
+  display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;
+  padding:6px 0;border-top:1px dashed var(--border);
+}
+.sport-card .meta-item{font-size:12px;color:var(--text-sub);display:flex;align-items:center;gap:3px}
+.sport-card .meta-item .meta-icon{font-size:14px}
+.sport-card .meta-item .meta-val{color:var(--text);font-weight:500}
+.sport-card .desc{font-size:13px;color:var(--text-sub);line-height:1.5}
+
+/* ===== Attractions ===== */
+.attn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.attn-card{
+  background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);
+  overflow:hidden;transition:transform .15s;display:flex;flex-direction:column;
+}
+.attn-card:hover{transform:translateY(-2px)}
+.attn-card-body{padding:16px;flex:1;display:flex;flex-direction:column}
+.attn-card h4{font-size:16px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.attn-card .attn-tags{margin-bottom:8px}
+.attn-tag{
+  display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
+  background:var(--primary-bg);color:var(--primary-dark);margin-right:4px;margin-bottom:4px;
+}
+.attn-card .attn-meta{
+  display:flex;flex-wrap:wrap;gap:8px 14px;margin-bottom:8px;
+  padding:6px 0;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);
+}
+.attn-card .meta-item{font-size:12px;color:var(--text-sub);display:flex;align-items:center;gap:3px}
+.attn-card .meta-item .meta-icon{font-size:14px}
+.attn-card .meta-item .meta-val{color:var(--text);font-weight:500}
+.attn-card .ticket-free{color:var(--primary-dark);font-weight:600}
+.attn-card .attn-highlights{
+  font-size:12px;color:var(--primary-dark);background:var(--primary-bg);
+  padding:4px 8px;border-radius:6px;margin-bottom:8px;line-height:1.5;
+}
+.attn-card .attn-tips{
+  font-size:12px;color:var(--text-sub);background:#FFF8E1;
+  padding:4px 8px;border-radius:6px;margin-bottom:8px;line-height:1.5;
+}
+.attn-card .location{font-size:13px;color:var(--text-sub);margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.attn-card .age-suit{font-size:12px;color:var(--info);font-weight:500;margin-bottom:8px}
+.attn-card .desc{font-size:13px;color:var(--text-sub);line-height:1.5;margin-bottom:10px}
+.attn-card .attn-actions{display:flex;gap:6px;margin-top:auto}
+.attn-nav-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;
+  background:var(--info);color:#fff;text-decoration:none;transition:opacity .2s;
+}
+.attn-nav-btn:hover{opacity:.85}
+.attn-card .attn-edit-actions{display:flex;gap:6px;margin-top:8px}
+
+/* ===== Modal ===== */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center;z-index:1000;
+  animation:fadeBg .2s ease;
+}
+@keyframes fadeBg{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--white);border-radius:16px;
+  width:90%;max-width:500px;max-height:90vh;overflow-y:auto;
+  animation:modalIn .25s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.modal-header{
+  padding:20px 24px 16px;font-size:17px;font-weight:700;
+  border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.modal-close{background:none;font-size:22px;color:var(--text-sub);line-height:1;padding:0}
+.modal-body{padding:20px 24px}
+.modal-footer{
+  padding:16px 24px 20px;border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:10px;
+}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text)}
+.form-label .required{color:var(--danger)}
+.form-input,.form-textarea,.form-select{
+  width:100%;padding:10px 14px;border:1px solid var(--border);
+  border-radius:8px;font-size:14px;transition:border-color .2s;background:#fff;
+}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--primary)}
+.form-textarea{resize:vertical;min-height:80px}
+.form-row{display:flex;gap:12px}
+.form-row .form-group{flex:1}
+.form-hint{font-size:12px;color:var(--text-sub);margin-top:4px}
+
+/* ===== Schedule List in Calendar Day ===== */
+.schedule-list-modal{margin-top:12px}
+.sched-item{
+  background:var(--primary-bg);border-radius:8px;padding:10px 12px;
+  margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
+}
+.sched-item-content{flex:1}
+.sched-item-guest{font-weight:600;font-size:13px;color:var(--primary-dark)}
+.sched-item-desc{font-size:12px;color:var(--text-sub);margin-top:2px}
+.sched-item-time{font-size:11px;color:var(--text-sub)}
+.sched-empty{text-align:center;color:var(--text-sub);padding:20px;font-size:13px}
+
+/* ===== Empty State ===== */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-sub)}
+.empty-state .icon{font-size:48px;margin-bottom:12px;opacity:.3}
+.empty-state p{font-size:14px}
+
+/* ===== Mobile ===== */
+.mobile-tabbar{display:none}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .content{padding:16px;padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+  .mobile-tabbar{
+    display:flex;position:fixed;bottom:0;left:0;right:0;
+    background:var(--white);box-shadow:0 -2px 10px rgba(0,0,0,.08);
+    z-index:100;padding-bottom:env(safe-area-inset-bottom);
+  }
+  .mobile-tab{
+    flex:1;padding:10px 4px;text-align:center;
+    font-size:11px;color:var(--text-sub);cursor:pointer;transition:color .2s;
+  }
+  .mobile-tab .tab-icon{font-size:22px;display:block;margin-bottom:2px}
+  .mobile-tab.active{color:var(--primary)}
+  .calendar-grid .cal-day{min-height:60px}
+  .cal-schedule-item{font-size:10px}
+  .page-title{font-size:18px}
+  .guest-grid,.attn-grid{grid-template-columns:1fr}
+  .sports-grid{grid-template-columns:1fr}
+  .form-row{flex-direction:column;gap:0}
+  .modal{width:95%}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="icon">📋</span>
+      <span>工作管理助手</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="schedule">
+        <span class="nav-icon">📅</span>
+        <span>工作计划排班</span>
+      </div>
+      <div class="nav-item" data-page="guests">
+        <span class="nav-icon">👥</span>
+        <span>客人统计</span>
+      </div>
+      <div class="nav-item" data-page="sports">
+        <span class="nav-icon">⚽</span>
+        <span>运动推荐</span>
+      </div>
+      <div class="nav-item" data-page="attractions">
+        <span class="nav-icon">🏞️</span>
+        <span>苏州景点</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">v1.0 · 本地存储</div>
+  </aside>
+
+  <!-- ===== Main Content ===== -->
+  <main class="content">
+
+    <!-- ====== Page: Schedule ====== -->
+    <section class="page active" id="page-schedule">
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">工作计划排班</h2>
+          <p class="page-subtitle">点击日期添加排班，可关联客人并填写安排内容</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="calendar-header">
+          <div class="calendar-nav">
+            <button class="btn btn-outline btn-sm" onclick="changeMonth(-1)">‹ 上月</button>
+            <h3 id="calMonthTitle"></h3>
+            <button class="btn btn-outline btn-sm" onclick="changeMonth(1)">下月 ›</button>
+          </div>
+          <button class="btn btn-primary" onclick="goToToday()">今天</button>
+        </div>
+        <div class="calendar-weekdays">
+          <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+    </section>
+
+    <!-- ====== Page: Guests ====== -->
+    <section class="page" id="page-guests">
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">客人统计</h2>
+          <p class="page-subtitle">管理客户信息，支持自定义增删改查</p>
+        </div>
+        <button class="btn btn-primary" onclick="openGuestModal()">+ 添加客人</button>
+      </div>
+      <input type="text" class="search-bar" placeholder="搜索姓名 / 小红书ID / 微信ID / 电话..." oninput="renderGuests(this.value)">
+      <div class="guest-grid" id="guestGrid"></div>
+    </section>
+
+    <!-- ====== Page: Sports ====== -->
+    <section class="page" id="page-sports">
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">运动推荐</h2>
+          <p class="page-subtitle">适合3-12岁儿童，提升体能的运动内容库</p>
+        </div>
+        <button class="btn btn-primary" onclick="openSportModal()">+ 添加运动</button>
+      </div>
+      <div class="filter-bar" id="ageTabs"></div>
+      <div class="filter-bar" id="venueTabs"></div>
+      <div class="sports-grid" id="sportsGrid"></div>
+    </section>
+
+    <!-- ====== Page: Attractions ====== -->
+    <section class="page" id="page-attractions">
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">苏州景点</h2>
+          <p class="page-subtitle">适合3-12岁儿童的苏州景点推荐，点击导航直达目的地</p>
+        </div>
+        <button class="btn btn-primary" onclick="openAttnModal()">+ 添加景点</button>
+      </div>
+      <input type="text" class="search-bar" placeholder="搜索景点名称 / 地址 / 标签..." oninput="renderAttractions(this.value)">
+      <div class="filter-bar" id="attnFilterTabs"></div>
+      <div class="attn-grid" id="attnGrid"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===== Mobile Tab Bar ===== -->
+<div class="mobile-tabbar">
+  <div class="mobile-tab active" data-page="schedule">
+    <span class="tab-icon">📅</span>排班
+  </div>
+  <div class="mobile-tab" data-page="guests">
+    <span class="tab-icon">👥</span>客人
+  </div>
+  <div class="mobile-tab" data-page="sports">
+    <span class="tab-icon">⚽</span>运动
+  </div>
+  <div class="mobile-tab" data-page="attractions">
+    <span class="tab-icon">🏞️</span>景点
+  </div>
+</div>
+
+<!-- ===== Modal Container ===== -->
+<div id="modalContainer"></div>
+
+<script>
+/* ===== Storage Keys ===== */
+var SK='wma_v3';
+var defaultData={
+  guests:[],
+  schedules:{},
+  sports:[],
+  attractions:[],
+  customSports:[],
+  customAttractions:[]
+};
+
+/* ===== Preset Sports ===== */
+var PRESET_SPORTS=[
+  /* ===== 3-6岁 · 室内 · 无器械 ===== */
+  {name:'动物模仿操',ageMin:3,ageMax:6,venue:'室内',equipment:'无器械',cat:'协调',duration:'15-20分钟',frequency:'每天1次',desc:'模仿兔子跳、大象走、螃蟹横行等各种动物动作，锻炼全身协调性和想象力，趣味性极强。'},
+  {name:'原地踏步跑',ageMin:3,ageMax:6,venue:'室内',equipment:'无器械',cat:'耐力',duration:'3-5分钟',frequency:'每天2-3次',desc:'原地高抬腿踏步跑，配合摆臂，提升心肺功能和腿部力量，适合晨间或饭后进行。'},
+  {name:'兔子跳/青蛙跳',ageMin:3,ageMax:6,venue:'室内',equipment:'无器械',cat:'力量',duration:'10-15次×3组',frequency:'每天1次',desc:'深蹲后向前/向上跳跃，模仿兔子或青蛙，锻炼腿部爆发力和弹跳能力。'},
+  {name:'踩影子游戏',ageMin:3,ageMax:6,venue:'室内',equipment:'无器械',cat:'协调',duration:'15-20分钟',frequency:'每天1次',desc:'灯光下互相踩对方影子，需快速移动和变向，锻炼反应速度和灵敏度。'},
+  {name:'伸展柔韧操',ageMin:3,ageMax:6,venue:'室内',equipment:'无器械',cat:'柔韧',duration:'10-15分钟',frequency:'每天1次',desc:'基础拉伸动作：够脚尖、侧弯、转体等，提升关节灵活性和柔韧性，预防运动损伤。'},
+  {name:'投掷袜子球',ageMin:3,ageMax:6,venue:'室内',equipment:'无器械',cat:'力量',duration:'10-15分钟',frequency:'每天1次',desc:'用袜子团成球投向目标（纸箱/画圈），锻炼上肢力量和投掷精准度，安全不伤家具。'},
+  {name:'爬行隧道赛',ageMin:3,ageMax:6,venue:'室内',equipment:'无器械',cat:'力量',duration:'15分钟',frequency:'每周3次',desc:'用桌椅和毯子搭隧道，钻爬通过，锻炼大运动能力和空间感知，全身性运动。'},
+  {name:'平衡线行走',ageMin:3,ageMax:6,venue:'室内',equipment:'无器械',cat:'平衡',duration:'10分钟',frequency:'每天1次',desc:'地上贴胶带线，脚跟碰脚尖行走，可设计直线/曲线/折线，培养平衡感和专注力。'},
+  {name:'音乐律动操',ageMin:3,ageMax:6,venue:'室内',equipment:'无器械',cat:'协调',duration:'15-20分钟',frequency:'每天1次',desc:'跟音乐节奏做动作：拍手、跺脚、转圈、摇摆等，提升节奏感和肢体表现力。'},
+  {name:'坐位体前屈',ageMin:3,ageMax:6,venue:'室内',equipment:'无器械',cat:'柔韧',duration:'保持10-15秒×3组',frequency:'每天1次',desc:'坐姿双腿伸直，双手前伸够脚尖，提升腰背和大腿后侧柔韧性。'},
+  /* ===== 3-6岁 · 室内 · 需器械 ===== */
+  {name:'基础跳绳',ageMin:3,ageMax:6,venue:'室内',equipment:'需器械',cat:'协调',duration:'5-10分钟',frequency:'每天1次',desc:'从摇绳练习开始，逐步掌握连续跳绳，增强心肺功能和手脚协调性。需跳绳一根。'},
+  {name:'球类滚抛游戏',ageMin:3,ageMax:6,venue:'室内',equipment:'需器械',cat:'协调',duration:'15分钟',frequency:'每周3次',desc:'滚球、抛接球、运球等趣味游戏，锻炼手眼协调和反应能力。需软球一个。'},
+  {name:'平衡木行走',ageMin:3,ageMax:6,venue:'室内',equipment:'需器械',cat:'平衡',duration:'10分钟',frequency:'每周2次',desc:'低矮平衡木上行走，可尝试侧走、倒走，培养专注力和身体控制力。需平衡木或替代物。'},
+  /* ===== 3-6岁 · 室外 · 无器械 ===== */
+  {name:'自然跑跳',ageMin:3,ageMax:6,venue:'室外',equipment:'无器械',cat:'耐力',duration:'20-30分钟',frequency:'每天1次',desc:'户外场地自由跑跳，可设置起点终点，提升心肺功能和下肢耐力，享受户外新鲜空气。'},
+  {name:'红绿灯游戏',ageMin:3,ageMax:6,venue:'室外',equipment:'无器械',cat:'协调',duration:'15-20分钟',frequency:'每周3次',desc:'喊"红灯"停"绿灯"跑，跑停交替，锻炼反应速度和身体控制能力。'},
+  {name:'捉迷藏',ageMin:3,ageMax:6,venue:'室外',equipment:'无器械',cat:'综合',duration:'20-30分钟',frequency:'每周3次',desc:'经典奔跑躲藏游戏，综合锻炼奔跑、变向、屏息控制等体能，趣味性极强。'},
+  {name:'自然探索徒步',ageMin:3,ageMax:6,venue:'室外',equipment:'无器械',cat:'耐力',duration:'30-45分钟',frequency:'每周2次',desc:'公园或绿地散步探索，观察植物昆虫，在徒步中提升耐力和自然认知。'},
+  {name:'草地翻滚',ageMin:3,ageMax:6,venue:'室外',equipment:'无器械',cat:'柔韧',duration:'15分钟',frequency:'每周2次',desc:'草地上前滚翻、侧滚翻，锻炼前庭觉和全身协调，安全又有趣。'},
+  /* ===== 3-6岁 · 室外 · 需器械 ===== */
+  {name:'平衡车骑行',ageMin:3,ageMax:6,venue:'室外',equipment:'需器械',cat:'平衡',duration:'20-30分钟',frequency:'每周3次',desc:'锻炼核心力量与平衡能力，户外骑行乐趣十足，适合公园或广场开展。需平衡车+头盔。'},
+  {name:'浅水嬉戏',ageMin:4,ageMax:6,venue:'室外',equipment:'需器械',cat:'水中',duration:'20-30分钟',frequency:'每周1次',desc:'浅水区玩水游戏，适应水性，为后续学游泳打基础。需泳衣+成人看护。'},
+  /* ===== 7-9岁 · 室内 · 无器械 ===== */
+  {name:'开合跳',ageMin:7,ageMax:9,venue:'室内',equipment:'无器械',cat:'协调',duration:'30-50个×3组',frequency:'每天1次',desc:'双脚跳开跳合配合手臂开合，全身协调运动，高效提升心肺功能。'},
+  {name:'高抬腿跑',ageMin:7,ageMax:9,venue:'室内',equipment:'无器械',cat:'耐力',duration:'30秒×3组',frequency:'每天1次',desc:'原地高抬腿跑，膝盖尽量抬至腰部，锻炼腿部力量和心肺耐力。'},
+  {name:'跪姿俯卧撑',ageMin:7,ageMax:9,venue:'室内',equipment:'无器械',cat:'力量',duration:'8-12个×3组',frequency:'每周3次',desc:'膝盖着地做俯卧撑，降低难度适合初学者，锻炼胸肌、手臂和核心力量。'},
+  {name:'仰卧起坐',ageMin:7,ageMax:9,venue:'室内',equipment:'无器械',cat:'力量',duration:'15-20个×3组',frequency:'每周3次',desc:'基础核心训练，双手交叉胸前或轻触耳侧，提升腹部力量。注意不要抱头拉拽。'},
+  {name:'靠墙静蹲',ageMin:7,ageMax:9,venue:'室内',equipment:'无器械',cat:'耐力',duration:'30-60秒×3组',frequency:'每天1次',desc:'背靠墙蹲至大腿与地面平行，保持静止，锻炼腿部耐力和核心稳定性。'},
+  {name:'坐位体前屈',ageMin:7,ageMax:9,venue:'室内',equipment:'无器械',cat:'柔韧',duration:'保持15-30秒×3组',frequency:'每天1次',desc:'坐姿双腿伸直前屈够脚尖，提升腰背和大腿后侧柔韧性，运动后拉伸效果最佳。'},
+  {name:'燕式平衡',ageMin:7,ageMax:9,venue:'室内',equipment:'无器械',cat:'平衡',duration:'每侧15-30秒×3组',frequency:'每天1次',desc:'单腿站立，身体前倾后腿抬起成"T"字，提升平衡能力和核心控制力。'},
+  {name:'熊爬行',ageMin:7,ageMax:9,venue:'室内',equipment:'无器械',cat:'力量',duration:'10米×3组',frequency:'每周3次',desc:'四肢着地（膝盖离地）爬行，锻炼全身协调和核心力量，趣味性和挑战性兼具。'},
+  {name:'弓步走',ageMin:7,ageMax:9,venue:'室内',equipment:'无器械',cat:'力量',duration:'10步×3组',frequency:'每周3次',desc:'大步弓步前行，后膝接近地面，锻炼大腿前后侧和臀部力量，提升下肢稳定性。'},
+  {name:'椅子台阶踏步',ageMin:7,ageMax:9,venue:'室内',equipment:'无器械',cat:'耐力',duration:'3分钟×3组',frequency:'每天1次',desc:'用稳固椅子做上下踏步，左右脚交替，提升心肺耐力和腿部力量。需稳固椅子。'},
+  /* ===== 7-9岁 · 室内 · 需器械 ===== */
+  {name:'连续跳绳',ageMin:7,ageMax:9,venue:'室内',equipment:'需器械',cat:'协调',duration:'500-1000次',frequency:'每天1次',desc:'追求连续跳绳次数，高效提升心肺功能和协调性，可从100次起步逐步增加。需跳绳。'},
+  {name:'踢毽子',ageMin:7,ageMax:9,venue:'室内',equipment:'需器械',cat:'协调',duration:'15-20分钟',frequency:'每周3次',desc:'锻炼腿部力量、踝关节灵活性和协调性，趣味性强。需毽子。'},
+  {name:'乒乓球启蒙',ageMin:7,ageMax:9,venue:'室内',equipment:'需器械',cat:'球类',duration:'30-45分钟',frequency:'每周2次',desc:'专业启蒙训练，锻炼反应速度、手眼协调和专注力。需球拍+球+球台。'},
+  /* ===== 7-9岁 · 室外 · 无器械 ===== */
+  {name:'折返跑',ageMin:7,ageMax:9,venue:'室外',equipment:'无器械',cat:'耐力',duration:'10米×5-10趟×3组',frequency:'每周3次',desc:'10米折返跑，跑至终点折返，锻炼速度、灵敏和变向能力。可标记起点终点。'},
+  {name:'立定跳远',ageMin:7,ageMax:9,venue:'室外',equipment:'无器械',cat:'力量',duration:'5-8次×3组',frequency:'每周3次',desc:'双脚起跳向前跃出，落地缓冲，锻炼下肢爆发力和弹跳力。可画线记录距离。'},
+  {name:'自然徒步探险',ageMin:7,ageMax:9,venue:'室外',equipment:'无器械',cat:'耐力',duration:'45-60分钟',frequency:'每周2次',desc:'中等强度徒步，可加入寻宝任务增加趣味，提升耐力和探索精神。'},
+  {name:'楼梯攀登',ageMin:7,ageMax:9,venue:'室外',equipment:'无器械',cat:'耐力',duration:'10-15分钟',frequency:'每周2次',desc:'台阶上下攀登，提升心肺耐力和腿部力量，注意安全和适度。'},
+  {name:'老鹰捉小鸡',ageMin:7,ageMax:9,venue:'室外',equipment:'无器械',cat:'综合',duration:'20-30分钟',frequency:'每周2次',desc:'经典追逐躲避游戏，含奔跑、变向、急停等综合体能训练，趣味互动性极强。'},
+  /* ===== 7-9岁 · 室外 · 需器械 ===== */
+  {name:'骑自行车',ageMin:7,ageMax:9,venue:'室外',equipment:'需器械',cat:'耐力',duration:'30-45分钟',frequency:'每周3次',desc:'户外骑行锻炼，提升腿部力量、耐力和交通安全意识。需自行车+头盔。'},
+  {name:'轮滑',ageMin:7,ageMax:9,venue:'室外',equipment:'需器械',cat:'平衡',duration:'30-45分钟',frequency:'每周2次',desc:'锻炼平衡能力和勇气，需佩戴全套护具安全开展。需轮滑鞋+护具。'},
+  {name:'足球入门',ageMin:7,ageMax:9,venue:'室外',equipment:'需器械',cat:'球类',duration:'45-60分钟',frequency:'每周2次',desc:'运球、传球、射门基础练习，培养团队协作精神。需足球+标志物。'},
+  {name:'游泳启蒙',ageMin:7,ageMax:9,venue:'室外',equipment:'需器械',cat:'水中',duration:'45-60分钟',frequency:'每周1-2次',desc:'学习蛙泳或自由泳基础，全身运动，增强心肺功能。需泳衣+泳镜+成人陪同。'},
+  {name:'趣味田径',ageMin:7,ageMax:9,venue:'室外',equipment:'需器械',cat:'综合',duration:'45分钟',frequency:'每周2次',desc:'短跑、跳远等基础田径项目，锻炼速度和爆发力。需跑道/空地+卷尺。'},
+  /* ===== 10-12岁 · 室内 · 无器械 ===== */
+  {name:'波比跳',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'力量',duration:'10-15个×3组',frequency:'每周3次',desc:'深蹲→俯卧撑→跳跃的组合动作，全身爆发力训练，高效燃脂提升体能。'},
+  {name:'标准俯卧撑',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'力量',duration:'10-20个×3组',frequency:'每周3次',desc:'标准直体俯卧撑，锻炼胸肌、手臂和核心力量。注意身体保持一条直线。'},
+  {name:'仰卧起坐进阶',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'力量',duration:'20-30个×3组',frequency:'每周3次',desc:'在7-9岁基础上增加次数和组数，持续提升核心力量。双手轻触耳侧，不抱头。'},
+  {name:'平板支撑',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'力量',duration:'30-60秒×3组',frequency:'每天1次',desc:'前臂支撑身体保持直线，锻炼核心稳定性和腰腹力量，是核心训练的基础动作。'},
+  {name:'深蹲',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'力量',duration:'15-20个×3组',frequency:'每周3次',desc:'标准深蹲，大腿与地面平行，锻炼大腿前后侧和臀部力量，注意膝盖不超过脚尖。'},
+  {name:'弓步蹲',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'力量',duration:'每侧10-15个×3组',frequency:'每周3次',desc:'前后弓步下蹲，锻炼单腿力量和平衡能力，左右腿交替进行。'},
+  {name:'开合跳进阶',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'协调',duration:'50-100个×3组',frequency:'每天1次',desc:'在7-9岁基础上增加数量，更高强度的心肺训练，可尝试加速版开合跳。'},
+  {name:'高抬腿冲刺',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'耐力',duration:'30-45秒×4组',frequency:'每周3次',desc:'最快速度高抬腿跑，追求极限速度，锻炼心肺爆发力和腿部力量。组间休息30秒。'},
+  {name:'坐位体前屈进阶',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'柔韧',duration:'保持20-30秒×3组',frequency:'每天1次',desc:'在7-9岁基础上增加保持时间，深度拉伸腰背和大腿后侧，提升柔韧性。'},
+  {name:'立卧撑',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'力量',duration:'10-15个×3组',frequency:'每周3次',desc:'站→蹲→俯卧撑→蹲跳起的连续动作，比波比跳多了俯卧撑环节，强度更大。'},
+  {name:'侧弓步蹲',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'力量',duration:'每侧10-15个×3组',frequency:'每周3次',desc:'侧向跨步下蹲，锻炼大腿内侧和臀部侧面力量，弥补前后弓步的不足。'},
+  {name:'登山跑',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'耐力',duration:'30-45秒×3组',frequency:'每周3次',desc:'俯卧撑姿势交替提膝至胸前，锻炼核心和心肺，是高效的全身燃脂动作。'},
+  /* ===== 10-12岁 · 室内 · 需器械 ===== */
+  {name:'跳绳进阶',ageMin:10,ageMax:12,venue:'室内',equipment:'需器械',cat:'协调',duration:'3-5分钟×3组',frequency:'每天1次',desc:'双摇、交叉跳等花样跳绳，挑战更高难度提升体能和协调性。需跳绳。'},
+  {name:'篮球训练',ageMin:10,ageMax:12,venue:'室内',equipment:'需器械',cat:'球类',duration:'45-60分钟',frequency:'每周2次',desc:'运球、投篮、三步上篮等系统训练，提升弹跳力和团队配合。需篮球+球架。'},
+  {name:'攀岩(室内墙)',ageMin:10,ageMax:12,venue:'室内',equipment:'需器械',cat:'力量',duration:'60分钟',frequency:'每周1次',desc:'室内攀岩墙体验，锻炼上肢力量、胆量和问题解决能力。需专业场馆+教练。'},
+  {name:'武术启蒙',ageMin:10,ageMax:12,venue:'室内',equipment:'无器械',cat:'综合',duration:'45-60分钟',frequency:'每周2次',desc:'学习基础拳法和套路，培养纪律性和自我保护能力，提升全身协调和力量。'},
+  /* ===== 10-12岁 · 室外 · 无器械 ===== */
+  {name:'长跑耐力',ageMin:10,ageMax:12,venue:'室外',equipment:'无器械',cat:'耐力',duration:'800-1500米',frequency:'每周2-3次',desc:'中长跑训练，系统提升心肺功能和意志力。可从400米起步逐步增加距离。'},
+  {name:'变速跑',ageMin:10,ageMax:12,venue:'室外',equipment:'无器械',cat:'耐力',duration:'10-15分钟',frequency:'每周2次',desc:'快慢交替跑：冲刺30秒+慢跑60秒循环，高效提升心肺耐力和速度耐力。'},
+  {name:'山地徒步',ageMin:10,ageMax:12,venue:'室外',equipment:'无器械',cat:'耐力',duration:'60-90分钟',frequency:'每周1次',desc:'中高强度山间徒步，含爬升和下降，全面挑战体能和意志，欣赏自然风光。'},
+  {name:'田径综合训练',ageMin:10,ageMax:12,venue:'室外',equipment:'无器械',cat:'综合',duration:'45-60分钟',frequency:'每周2次',desc:'短跑、跳远、跳高综合练习，锻炼速度、爆发力和弹跳力。'},
+  /* ===== 10-12岁 · 室外 · 需器械 ===== */
+  {name:'足球进阶',ageMin:10,ageMax:12,venue:'室外',equipment:'需器械',cat:'球类',duration:'60-90分钟',frequency:'每周2次',desc:'战术配合、位置跑动、对抗练习，全面提升体能和战术意识。需足球+场地。'},
+  {name:'羽毛球',ageMin:10,ageMax:12,venue:'室外',equipment:'需器械',cat:'球类',duration:'45-60分钟',frequency:'每周2次',desc:'步法、挥拍、高远球等技术训练，锻炼灵活性和爆发力。需球拍+球。'},
+  {name:'游泳进阶',ageMin:10,ageMax:12,venue:'室外',equipment:'需器械',cat:'水中',duration:'45-60分钟',frequency:'每周2次',desc:'自由泳、仰泳等多泳姿训练，持续提升心肺耐力和全身肌肉力量。需泳衣+泳镜。'}
+];
+
+/* ===== Preset Attractions ===== */
+var PRESET_ATTRACTIONS=[
+  /* ===== 主题乐园/游乐 ===== */
+  {name:'苏州乐园森林世界',location:'高新区山高路',address:'苏州高新区山高路88号',lat:31.3728,lng:120.5612,ageMin:3,ageMax:12,desc:'大型森林主题乐园，过山车、旋转木马、激流勇进等数十项游乐设施，分区域适合不同年龄段。',tags:['乐园','户外','亲子'],ticket:'160元',duration:'全天',bestTime:'春秋季',highlights:'森林过山车、激流勇进、亲子互动区',tips:'节假日人多，建议工作日前往；带泳衣可玩水上项目'},
+  {name:'华谊兄弟电影世界',location:'工业园区阳澄湖',address:'工业园区阳澄湖大道188号',lat:31.4156,lng:120.7268,ageMin:5,ageMax:12,desc:'电影主题乐园，多个电影IP场景沉浸式体验，互动表演和游乐设施结合。',tags:['乐园','室内','亲子'],ticket:'228元',duration:'全天',bestTime:'四季皆宜',highlights:'集结号体验区、非诚勿扰互动、太极馆',tips:'室内项目为主，雨天也适合前往'},
+  {name:'苏州摩天轮乐园',location:'工业园区金鸡湖',address:'工业园区右岸街9号',lat:31.3128,lng:120.7362,ageMin:3,ageMax:12,desc:'金鸡湖畔摩天轮是苏州地标，高120米可俯瞰全城，搭配周边游乐设施。',tags:['乐园','户外','地标'],ticket:'80元',duration:'2-3小时',bestTime:'傍晚',highlights:'120米摩天轮、湖景视野',tips:'傍晚去可以看日落夜景；摩天轮一圈约30分钟'},
+  {name:'龙湖狮山天街游乐',location:'高新区狮山路',address:'高新区狮山路与塔园路交叉口',lat:31.3322,lng:120.5689,ageMin:3,ageMax:10,desc:'商场内大型儿童游乐区，含蹦床公园、攀爬架、海洋球池等，天气不好时的好选择。',tags:['室内','游乐','全天候'],ticket:'80-120元',duration:'2-3小时',bestTime:'全天候',highlights:'蹦床公园、攀爬架、海洋球',tips:'商场内适合雨天活动；有家长休息区'},
+
+  /* ===== 博物馆/科教 ===== */
+  {name:'苏州博物馆',location:'姑苏区东北街',address:'姑苏区东北街204号',lat:31.3242,lng:120.6289,ageMin:5,ageMax:12,desc:'贝聿铭设计的世界级博物馆，建筑本身就是艺术品。有儿童互动展厅、吴门画派展厅和秘色瓷莲花展。',tags:['室内','文化','教育'],ticket:'免费',duration:'2-3小时',bestTime:'春秋季',highlights:'贝聿铭建筑设计、秘色瓷莲花、儿童互动区',tips:'需提前在公众号预约；周一闭馆；入口处有儿童导览图'},
+  {name:'苏州科技馆',location:'工业园区',address:'工业园区翠薇巷1号',lat:31.3289,lng:120.7145,ageMin:4,ageMax:12,desc:'互动科学体验馆，含机器人展区、太空探索、VR体验和科学实验表演，激发孩子科学兴趣。',tags:['室内','科普','互动'],ticket:'60元',duration:'3-4小时',bestTime:'四季皆宜',highlights:'机器人展区、VR太空体验、科学实验秀',tips:'周末有科学实验表演；建议上午去人少'},
+  {name:'苏州丝绸博物馆',location:'姑苏区人民路',address:'姑苏区人民路2001号',lat:31.3189,lng:120.6156,ageMin:5,ageMax:12,desc:'展示丝绸文化历史，可观看丝绸制作过程、体验织布和扎染，了解蚕桑文化。',tags:['室内','文化','体验'],ticket:'免费',duration:'1-2小时',bestTime:'四季皆宜',highlights:'丝绸制作观摩、织布体验、扎染手工',tips:'可预约手工体验项目（另收费）；周一闭馆'},
+
+  /* ===== 自然/公园/户外 ===== */
+  {name:'金鸡湖景区',location:'工业园区',address:'工业园区星港街158号',lat:31.3128,lng:120.7362,ageMin:3,ageMax:12,desc:'5A级景区，环湖步道10公里，音乐喷泉、亲水平台、亲子骑行道，开阔空间适合各种户外活动。',tags:['户外','骑行','免费'],ticket:'免费',duration:'半天',bestTime:'春秋季傍晚',highlights:'音乐喷泉（周五六日）、环湖骑行、月光码头',tips:'喷泉表演通常在周五六日晚7:30；可租自行车环湖'},
+  {name:'白塘生态植物园',location:'工业园区',address:'工业园区翠薇巷1号附近',lat:31.3289,lng:120.7145,ageMin:3,ageMax:12,desc:'免费开放，植物认知区、大草坪可奔跑放风筝，还有儿童游乐设施和亲水栈道。',tags:['植物','免费','草坪'],ticket:'免费',duration:'2-3小时',bestTime:'春秋季',highlights:'大草坪放风筝、植物认知、亲水栈道',tips:'可带野餐垫和风筝；有免费停车位'},
+  {name:'太湖湿地公园',location:'吴中区',address:'吴中区环太湖大道',lat:31.2056,lng:120.4189,ageMin:3,ageMax:12,desc:'国家级湿地公园，湿地生态科普、观鸟台、木栈道徒步，水生植物和鸟类观察的好去处。',tags:['自然','徒步','科普'],ticket:'60元',duration:'半天',bestTime:'春秋季',highlights:'观鸟台、湿地科普馆、木栈道',tips:'带望远镜观鸟效果更好；注意防晒'},
+  {name:'大阳山森林公园',location:'高新区',address:'高新区阳山东路',lat:31.3856,lng:120.5589,ageMin:5,ageMax:12,desc:'苏州城市绿肺，多条登山步道难度不等，山顶观景台可俯瞰苏州城，亲子探险路线。',tags:['登山','自然','探险'],ticket:'免费',duration:'半天',bestTime:'春秋季',highlights:'山顶观景台、植物园、亲子探险步道',tips:'穿运动鞋；带足饮水；有适合5+儿童的步道路线'},
+  {name:'石湖景区',location:'吴中区',address:'吴中区石湖景区',lat:31.2789,lng:120.6056,ageMin:3,ageMax:12,desc:'石湖之畔，步道、草坪、划船，范成大祠堂等人文景观，低龄儿童友好的户外场地。',tags:['湖畔','免费','野餐'],ticket:'免费',duration:'半天',bestTime:'春秋季',highlights:'湖畔草坪野餐、划船、范成大祠堂',tips:'可租脚踏船；草坪适合野餐和飞盘'},
+  {name:'旺山生态园',location:'吴中区',address:'吴中区旺山村',lat:31.2389,lng:120.5756,ageMin:4,ageMax:12,desc:'茶园、山间步道、儿童活动区，可采茶体验、农家乐，适合全家郊游徒步。',tags:['自然','徒步','郊游'],ticket:'免费',duration:'半天',bestTime:'春季',highlights:'茶园采茶体验、山间步道、农家乐',tips:'春季可体验采茶；有农家乐午餐'},
+  {name:'阳澄湖半岛',location:'工业园区',address:'工业园区阳澄环路',lat:31.4156,lng:120.7268,ageMin:3,ageMax:12,desc:'环湖骑行道、莲花岛、亲子农场体验，户外活动空间充足，骑行+采摘组合半日游。',tags:['骑行','农场','户外'],ticket:'免费',duration:'半天',bestTime:'春秋季',highlights:'环湖骑行道、莲花岛、亲子农场',tips:'可租自行车；秋季有大闸蟹-related体验'},
+  {name:'荷塘月色湿地公园',location:'相城区',address:'相城区太阳路',lat:31.3756,lng:120.5889,ageMin:3,ageMax:10,desc:'夏季赏荷最佳去处，木栈道漫步、湿地观鸟、划船赏荷，季节性亲子自然体验。',tags:['湿地','季节','自然'],ticket:'40元',duration:'2-3小时',bestTime:'夏季',highlights:'夏季赏荷、木栈道、湿地观鸟',tips:'最佳赏荷期为6-8月；带防晒和驱蚊液'},
+
+  /* ===== 动物/植物园 ===== */
+  {name:'苏州动物园',location:'姑苏区白塔东路',address:'姑苏区白塔东路5-1号',lat:31.3142,lng:120.6356,ageMin:3,ageMax:12,desc:'多种动物展区，含猛兽区、灵长区、鸟类区和儿童骑乘区，可近距离观察学习动物知识。',tags:['动物','户外','亲子'],ticket:'25元',duration:'2-3小时',bestTime:'春秋季',highlights:'猛兽区、灵长区、儿童骑乘区',tips:'上午动物活跃度高；带零食注意不要投喂'},
+  {name:'上方山森林动物世界',location:'高新区',address:'高新区上方山南麓',lat:31.2856,lng:120.5789,ageMin:3,ageMax:12,desc:'苏州最大动物园，动物种类更丰富，含大象馆、长颈鹿馆、两栖爬行馆，空间宽敞适合亲子。',tags:['动物','户外','亲子'],ticket:'60元',duration:'半天',bestTime:'春秋季',highlights:'大象馆、长颈鹿馆、两栖爬行馆',tips:'园区大建议预留半天；有观光车可乘'},
+  {name:'太湖鲜花庄园',location:'吴中区',address:'吴中区太湖旅游度假区',lat:31.1989,lng:120.4156,ageMin:3,ageMax:10,desc:'四季花海主题庄园，春季郁金香、夏季向日葵、秋季粉黛乱子草，拍照打卡和亲子自然教育。',tags:['花海','户外','拍照'],ticket:'60元',duration:'2-3小时',bestTime:'春秋季',highlights:'四季花海、粉黛乱子草、郁金香',tips:'不同季节花种不同，出行前查看花期'},
+
+  /* ===== 古镇/文化 ===== */
+  {name:'虎丘山风景区',location:'姑苏区',address:'姑苏区虎丘山门',lat:31.3356,lng:120.5723,ageMin:5,ageMax:12,desc:'世界文化遗产，虎丘塔（东方比萨斜塔）、剑池、断梁殿等历史景观，登山步道轻度体能挑战。',tags:['历史','登山','文化'],ticket:'70元',duration:'2-3小时',bestTime:'春秋季',highlights:'虎丘塔、剑池、断梁殿',tips:'山不高适合5+儿童徒步；有讲解器可租'},
+  {name:'拙政园',location:'姑苏区',address:'姑苏区东北街178号',lat:31.3256,lng:120.6289,ageMin:6,ageMax:12,desc:'中国四大名园之一，世界文化遗产。园林艺术巅峰之作，可引导孩子观察借景、框景等造园手法。',tags:['园林','文化','世遗'],ticket:'70元',duration:'2小时',bestTime:'春秋季',highlights:'远香堂、倒影楼、与谁同坐轩',tips:'适合6+儿童理解园林美学；建议蹭导游听讲解'},
+  {name:'留园',location:'姑苏区',address:'姑苏区留园路338号',lat:31.3189,lng:120.5956,ageMin:6,ageMax:12,desc:'中国四大名园之一，以建筑空间艺术著称，太湖石假山区适合孩子探索。',tags:['园林','文化','世遗'],ticket:'55元',duration:'1.5小时',bestTime:'春秋季',highlights:'冠云峰、太湖石假山、长廊',tips:'假山区孩子很喜欢；有免费志愿讲解'},
+  {name:'甪直古镇',location:'吴中区',address:'吴中区甪直镇',lat:31.2689,lng:120.5356,ageMin:5,ageMax:12,desc:'水乡古镇，可坐船游河、探访叶圣陶纪念馆、学做萝卜干，水乡文化体验。',tags:['古镇','游船','文化'],ticket:'免费',duration:'半天',bestTime:'春秋季',highlights:'游船、叶圣陶纪念馆、手工体验',tips:'可买船票坐手摇船体验水巷；古镇免门票'},
+  {name:'平江路历史街区',location:'姑苏区',address:'姑苏区平江路',lat:31.3189,lng:120.6289,ageMin:4,ageMax:12,desc:'宋代古街沿河而建，保留了原汁原味的水乡风貌。可体验评弹、苏绣、捏面人等非遗文化。',tags:['古街','文化','免费'],ticket:'免费',duration:'2-3小时',bestTime:'四季皆宜',highlights:'水巷风貌、评弹体验、捏面人',tips:'可带孩子体验捏面人和苏绣；沿河小店有特色小吃'},
+  {name:'山塘街',location:'姑苏区',address:'姑苏区山塘街',lat:31.3289,lng:120.6089,ageMin:4,ageMax:12,desc:'七里山塘自古繁华，有"姑苏第一名街"之称。可坐画舫游河、品苏州美食，夜景尤其美。',tags:['古街','游船','夜景'],ticket:'免费',duration:'2-3小时',bestTime:'傍晚',highlights:'画舫游河、美食街、夜景',tips:'傍晚去夜景最美；可坐画舫游河（约50元）'},
+
+  /* ===== 特色体验 ===== */
+  {name:'独墅湖图书馆及周边',location:'工业园区',address:'工业园区翠薇街1号',lat:31.3189,lng:120.7356,ageMin:6,ageMax:12,desc:'公共图书馆有儿童区、湖边步道，室内阅读+户外散步组合半日游，适合培养阅读习惯。',tags:['阅读','室内','湖畔'],ticket:'免费',duration:'半天',bestTime:'四季皆宜',highlights:'儿童阅读区、湖边步道',tips:'图书馆需持身份证或市民卡进入'},
+  {name:'苏州青少年科技馆',location:'工业园区',address:'工业园区水坊路',lat:31.3223,lng:120.7189,ageMin:5,ageMax:12,desc:'青少年科普教育基地，互动科学实验、创客空间、3D打印体验，动手做中学。',tags:['科普','互动','室内'],ticket:'免费',duration:'2-3小时',bestTime:'四季皆宜',highlights:'科学实验、创客空间、3D打印',tips:'需提前预约；周末有主题工作坊'},
+  {name:'李公堤',location:'工业园区金鸡湖',address:'工业园区李公堤路',lat:31.3089,lng:120.7323,ageMin:3,ageMax:12,desc:'金鸡湖畔风情堤岸，中西合璧建筑群，沿湖步道散步+品美食+看喷泉，休闲亲子半日游。',tags:['湖畔','美食','免费'],ticket:'免费',duration:'2-3小时',bestTime:'傍晚',highlights:'湖景步道、美食街、音乐喷泉',tips:'傍晚散步最佳；周五六日有喷泉表演'},
+  {name:'圆融时代广场',location:'工业园区',address:'工业园区旺墩路',lat:31.3156,lng:120.7389,ageMin:3,ageMax:12,desc:'天幕街、音乐喷泉、亲子餐厅和室内游乐，购物+亲子活动+美食一站式体验。',tags:['室内','美食','一站式'],ticket:'免费',duration:'半天',bestTime:'四季皆宜',highlights:'天幕街、音乐喷泉、亲子餐厅',tips:'天幕每晚7点亮灯；室内游乐区适合雨天'},
+  {name:'苏州奥体中心',location:'工业园区',address:'工业园区独墅湖',lat:31.3189,lng:120.7423,ageMin:6,ageMax:12,desc:'大型体育场馆，可观看足球、篮球等赛事，也有儿童游泳培训和运动体验项目。',tags:['体育','赛事','运动'],ticket:'赛事票价不等',duration:'半天',bestTime:'赛季',highlights:'观看赛事、游泳培训、运动体验',tips:'有赛事时去体验最好；也有日常运动培训可参加'},
+  {name:'尹山湖阳光天地',location:'吴中区',address:'吴中区尹山湖路',lat:31.2889,lng:120.6489,ageMin:3,ageMax:10,desc:'湖畔大型商业体，有儿童游乐中心、蹦床公园、卡丁车馆等，室内亲子运动好去处。',tags:['室内','游乐','运动'],ticket:'各项目80-150元',duration:'半天',bestTime:'全天候',highlights:'蹦床公园、卡丁车、儿童游乐中心',tips:'多项目可买套票更划算；适合雨天活动'}
+];
+
+/* ===== Data Manager ===== */
+function loadData(){
+  try{
+    var raw=localStorage.getItem(SK);
+    if(raw){
+      var d=JSON.parse(raw);
+      // merge defaults
+      for(var k in defaultData){if(d[k]===undefined)d[k]=defaultData[k];}
+      return d;
+    }
+  }catch(e){}
+  return JSON.parse(JSON.stringify(defaultData));
+}
+function saveData(){
+  try{localStorage.setItem(SK,JSON.stringify(DATA));}catch(e){alert('保存失败：'+e.message);}
+}
+var DATA=loadData();
+
+// first-time init: load presets
+if(DATA.sports.length===0&&DATA.customSports.length===0){
+  DATA.sports=JSON.parse(JSON.stringify(PRESET_SPORTS));
+  saveData();
+}
+// upgrade: if old preset sports lack venue field, reload presets
+if(DATA.sports.length>0&&DATA.sports[0]&&!DATA.sports[0].venue){
+  DATA.sports=JSON.parse(JSON.stringify(PRESET_SPORTS));
+  saveData();
+}
+if(DATA.attractions.length===0&&DATA.customAttractions.length===0){
+  DATA.attractions=JSON.parse(JSON.stringify(PRESET_ATTRACTIONS));
+  saveData();
+}
+// upgrade: if old preset attractions lack address field, reload presets
+if(DATA.attractions.length>0&&DATA.attractions[0]&&!DATA.attractions[0].address){
+  DATA.attractions=JSON.parse(JSON.stringify(PRESET_ATTRACTIONS));
+  saveData();
+}
+// ensure sports & attractions arrays are populated
+function getAllSports(){
+  return DATA.sports.concat(DATA.customSports||[]);
+}
+function getAllAttractions(){
+  return DATA.attractions.concat(DATA.customAttractions||[]);
+}
+
+/* ===== Navigation ===== */
+function switchPage(name){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){
+    n.classList.toggle('active',n.dataset.page===name);
+  });
+  document.querySelectorAll('.mobile-tab').forEach(function(t){
+    t.classList.toggle('active',t.dataset.page===name);
+  });
+  if(name==='guests')renderGuests();
+  if(name==='sports')renderSports();
+  if(name==='attractions')renderAttractions();
+}
+document.querySelectorAll('.nav-item,.mobile-tab').forEach(function(el){
+  el.addEventListener('click',function(){switchPage(el.dataset.page);});
+});
+
+/* ===== Calendar ===== */
+var calDate=new Date();
+function pad2(n){return n<10?'0'+n:''+n;}
+function fmtDate(y,m,d){return y+'-'+pad2(m+1)+'-'+pad2(d);}
+function todayStr(){
+  var t=new Date();
+  return fmtDate(t.getFullYear(),t.getMonth(),t.getDate());
+}
+function changeMonth(dir){
+  calDate.setMonth(calDate.getMonth()+dir);
+  renderCalendar();
+}
+function goToToday(){
+  calDate=new Date();
+  renderCalendar();
+  openDayModal(todayStr());
+}
+function renderCalendar(){
+  var y=calDate.getFullYear();
+  var m=calDate.getMonth();
+  document.getElementById('calMonthTitle').textContent=y+'年'+(m+1)+'月';
+  var firstDay=new Date(y,m,1).getDay();
+  var daysInMonth=new Date(y,m+1,0).getDate();
+  var daysPrev=new Date(y,m,0).getDate();
+  var grid=document.getElementById('calendarGrid');
+  grid.innerHTML='';
+  var today=todayStr();
+  // prev month days
+  for(var i=firstDay-1;i>=0;i--){
+    var dp=daysPrev-i;
+    var pm=m-1<0?11:m-1;
+    var py=m-1<0?y-1:y;
+    grid.appendChild(makeCalDay(py,pm,dp,true));
+  }
+  // current month
+  for(var d=1;d<=daysInMonth;d++){
+    grid.appendChild(makeCalDay(y,m,d,false));
+  }
+  // next month fill
+  var total=firstDay+daysInMonth;
+  var remain=(7-total%7)%7;
+  for(var j=1;j<=remain;j++){
+    var nm=m+1>11?0:m+1;
+    var ny=m+1>11?y+1:y;
+    grid.appendChild(makeCalDay(ny,nm,j,true));
+  }
+}
+function makeCalDay(y,m,d,isOther){
+  var ds=fmtDate(y,m,d);
+  var div=document.createElement('div');
+  div.className='cal-day';
+  if(isOther)div.classList.add('other-month');
+  if(ds===todayStr())div.classList.add('today');
+  var scheds=DATA.schedules[ds]||[];
+  if(scheds.length>0)div.classList.add('has-schedule');
+  var num=document.createElement('div');
+  num.className='cal-day-num';
+  num.textContent=d;
+  div.appendChild(num);
+  var sl=document.createElement('div');
+  sl.className='cal-schedules';
+  scheds.slice(0,3).forEach(function(s){
+    var item=document.createElement('div');
+    item.className='cal-schedule-item';
+    var gname=getGuestName(s.guestId);
+    item.textContent=(s.time?s.time+' ':'')+(gname||s.content||'').slice(0,12);
+    sl.appendChild(item);
+  });
+  if(scheds.length>3){
+    var more=document.createElement('div');
+    more.className='cal-schedule-item';
+    more.style.textAlign='center';
+    more.textContent='+'+(scheds.length-3)+' 更多';
+    sl.appendChild(more);
+  }
+  div.appendChild(sl);
+  div.addEventListener('click',function(){openDayModal(ds);});
+  return div;
+}
+function getGuestName(id){
+  if(!id)return '';
+  var g=DATA.guests.find(function(x){return x.id===id;});
+  return g?g.name:'';
+}
+
+/* ===== Day Schedule Modal ===== */
+function openDayModal(dateStr){
+  var scheds=DATA.schedules[dateStr]||[];
+  var parts=dateStr.split('-');
+  var displayDate=parts[1]+'月'+parts[2]+'日';
+  var html='<div class="modal-overlay" onclick="if(event.target===this)closeModal()">'+
+    '<div class="modal">'+
+      '<div class="modal-header">'+
+        '<span>'+displayDate+' 排班管理</span>'+
+        '<button class="modal-close" onclick="closeModal()">×</button>'+
+      '</div>'+
+      '<div class="modal-body">'+
+        '<div class="schedule-list-modal" id="daySchedList">';
+  if(scheds.length===0){
+    html+='<div class="sched-empty">当天暂无排班，点击下方添加</div>';
+  }else{
+    scheds.forEach(function(s,idx){
+      var gname=getGuestName(s.guestId);
+      html+='<div class="sched-item">'+
+        '<div class="sched-item-content">'+
+          '<div class="sched-item-guest">'+(gname||'未关联客人')+(s.time?' · '+s.time:'')+'</div>'+
+          (s.content?'<div class="sched-item-desc">'+escapeHtml(s.content)+'</div>':'')+
+        '</div>'+
+        '<div style="display:flex;gap:4px">'+
+          '<button class="btn-icon" onclick="openSchedModal(\''+dateStr+'\','+idx+')" style="font-size:16px">✏️</button>'+
+          '<button class="btn-icon" onclick="deleteSched(\''+dateStr+'\','+idx+')" style="font-size:16px">🗑️</button>'+
+        '</div>'+
+      '</div>';
+    });
+  }
+  html+='</div>'+
+      '</div>'+
+      '<div class="modal-footer">'+
+        '<button class="btn btn-outline" onclick="closeModal()">关闭</button>'+
+        '<button class="btn btn-primary" onclick="openSchedModal(\''+dateStr+'\')">+ 添加排班</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+  document.getElementById('modalContainer').innerHTML=html;
+}
+function deleteSched(dateStr,idx){
+  if(!confirm('确认删除这条排班吗？'))return;
+  if(DATA.schedules[dateStr]){
+    DATA.schedules[dateStr].splice(idx,1);
+    if(DATA.schedules[dateStr].length===0)delete DATA.schedules[dateStr];
+    saveData();
+  }
+  closeModal();
+  renderCalendar();
+}
+
+/* ===== Schedule Add/Edit Modal ===== */
+var editingSchedDate=null;
+var editingSchedIdx=null;
+function openSchedModal(dateStr,idx){
+  editingSchedDate=dateStr;
+  editingSchedIdx=(idx===undefined)?null:idx;
+  var sched=null;
+  if(idx!==undefined&&DATA.schedules[dateStr]){
+    sched=DATA.schedules[dateStr][idx]||{};
+  }
+  var parts=dateStr.split('-');
+  var displayDate=parts[1]+'月'+parts[2]+'日';
+  var guestOptions='<option value="">-- 不关联客人 --</option>';
+  DATA.guests.forEach(function(g){
+    var sel=(sched&&sched.guestId===g.id)?' selected':'';
+    guestOptions+='<option value="'+g.id+'"'+sel+'>'+escapeHtml(g.name)+(g.childName?' ('+escapeHtml(g.childName)+')':'')+'</option>';
+  });
+  // sport quick-fill
+  var allSports=getAllSports();
+  var sportOptions='<option value="">-- 选择运动快速填写 --</option>';
+  allSports.forEach(function(sp){
+    sportOptions+='<option value="'+escapeHtml(sp.name)+'">'+escapeHtml(sp.name)+' ('+sp.ageMin+'-'+sp.ageMax+'岁, '+(sp.venue||'')+(sp.equipment==='无器械'?', 无器械':'')+')</option>';
+  });
+  // attraction quick-fill
+  var allAttn=getAllAttractions();
+  var attnOptions='<option value="">-- 选择景点快速填写 --</option>';
+  allAttn.forEach(function(at){
+    var extra=[];
+    if(at.duration)extra.push(at.duration);
+    if(at.ticket)extra.push(at.ticket);
+    attnOptions+='<option value="'+escapeHtml(at.name)+'">'+escapeHtml(at.name)+(extra.length?' ('+extra.join(', ')+')':'')+'</option>';
+  });
+  var html='<div class="modal-overlay" onclick="if(event.target===this)closeModal()">'+
+    '<div class="modal">'+
+      '<div class="modal-header">'+
+        '<span>'+(idx!==undefined?'编辑排班':'添加排班')+' - '+displayDate+'</span>'+
+        '<button class="modal-close" onclick="closeModal()">×</button>'+
+      '</div>'+
+      '<div class="modal-body">'+
+        '<div class="form-group">'+
+          '<label class="form-label">关联客人</label>'+
+          '<select class="form-select" id="schedGuest">'+guestOptions+'</select>'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">时间 <span style="color:var(--text-sub);font-weight:400">(选填)</span></label>'+
+          '<input type="time" class="form-input" id="schedTime" value="'+(sched?sched.time||'':'')+'">'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">安排内容</label>'+
+          '<select class="form-select" id="schedQuickSport" onchange="quickFillSched(this.value)" style="margin-bottom:8px">'+sportOptions+'</select>'+
+          '<select class="form-select" id="schedQuickAttn" onchange="quickFillAttn(this.value)" style="margin-bottom:8px">'+attnOptions+'</select>'+
+          '<textarea class="form-textarea" id="schedContent" placeholder="填写安排内容，如：体能训练-跳绳500次、平衡车骑行1小时...">'+(sched?escapeHtml(sched.content||''):'')+'</textarea>'+
+        '</div>'+
+      '</div>'+
+      '<div class="modal-footer">'+
+        '<button class="btn btn-outline" onclick="closeModal()">取消</button>'+
+        '<button class="btn btn-primary" onclick="saveSched()">保存</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+  document.getElementById('modalContainer').innerHTML=html;
+}
+function quickFillSched(name){
+  if(!name)return;
+  var ta=document.getElementById('schedContent');
+  var cur=ta.value.trim();
+  // find sport to get duration & frequency
+  var sp=getAllSports().find(function(x){return x.name===name;});
+  var line=name;
+  if(sp&&(sp.duration||sp.frequency)){
+    line+=' ('+[sp.duration,sp.frequency].filter(Boolean).join(', ')+')';
+  }
+  ta.value=cur?cur+'\n'+line:line;
+  document.getElementById('schedQuickSport').value='';
+}
+function quickFillAttn(name){
+  if(!name)return;
+  var ta=document.getElementById('schedContent');
+  var cur=ta.value.trim();
+  var at=getAllAttractions().find(function(x){return x.name===name;});
+  var line='景点：'+name;
+  if(at){
+    var parts=[];
+    if(at.duration)parts.push(at.duration);
+    if(at.ticket)parts.push(at.ticket);
+    if(parts.length)line+=' ('+parts.join(', ')+')';
+    if(at.address)line+='\n地址：'+at.address;
+  }
+  ta.value=cur?cur+'\n'+line:line;
+  document.getElementById('schedQuickAttn').value='';
+}
+function saveSched(){
+  var guestId=document.getElementById('schedGuest').value;
+  var time=document.getElementById('schedTime').value;
+  var content=document.getElementById('schedContent').value.trim();
+  if(!content&&!guestId){
+    alert('请至少填写关联客人或安排内容');
+    return;
+  }
+  var item={guestId:guestId,time:time,content:content};
+  if(!DATA.schedules[editingSchedDate])DATA.schedules[editingSchedDate]=[];
+  if(editingSchedIdx!==null){
+    DATA.schedules[editingSchedDate][editingSchedIdx]=item;
+  }else{
+    DATA.schedules[editingSchedDate].push(item);
+  }
+  saveData();
+  closeModal();
+  renderCalendar();
+}
+
+/* ===== Guests ===== */
+function renderGuests(keyword){
+  var grid=document.getElementById('guestGrid');
+  var list=DATA.guests.slice();
+  if(keyword){
+    var kw=keyword.toLowerCase();
+    list=list.filter(function(g){
+      return (g.name||'').toLowerCase().indexOf(kw)>=0||
+             (g.xhsId||'').toLowerCase().indexOf(kw)>=0||
+             (g.wxId||'').toLowerCase().indexOf(kw)>=0||
+             (g.phone||'').toLowerCase().indexOf(kw)>=0||
+             (g.childName||'').toLowerCase().indexOf(kw)>=0;
+    });
+  }
+  if(list.length===0){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1">'+
+      '<div class="icon">👥</div><p>'+(keyword?'未找到匹配的客人':'还没有客人记录，点击右上角添加')+'</p></div>';
+    return;
+  }
+  grid.innerHTML='';
+  list.forEach(function(g){
+    var card=document.createElement('div');
+    card.className='guest-card';
+    var info='';
+    info+=makeGuestInfo('小红书ID',g.xhsId);
+    info+=makeGuestInfo('微信ID',g.wxId);
+    info+=makeGuestInfo('电话号码',g.phone);
+    if(g.childName)info+=makeGuestInfo('孩子姓名',g.childName);
+    if(g.childAge)info+=makeGuestInfo('孩子年龄',g.childAge+'岁');
+    if(g.notes)info+=makeGuestInfo('备注',g.notes);
+    card.innerHTML=
+      '<div class="guest-name">'+escapeHtml(g.name)+'</div>'+
+      info+
+      '<div class="guest-actions">'+
+        '<button class="btn btn-outline btn-sm" onclick="openGuestModal(\''+g.id+'\')">编辑</button>'+
+        '<button class="btn btn-danger btn-sm" onclick="deleteGuest(\''+g.id+'\')">删除</button>'+
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+function makeGuestInfo(label,val){
+  if(!val)return '';
+  return '<div class="guest-info"><span class="label">'+label+'</span><span class="value">'+escapeHtml(val)+'</span></div>';
+}
+var editingGuestId=null;
+function openGuestModal(id){
+  editingGuestId=id||null;
+  var g=null;
+  if(id){g=DATA.guests.find(function(x){return x.id===id;});}
+  var html='<div class="modal-overlay" onclick="if(event.target===this)closeModal()">'+
+    '<div class="modal">'+
+      '<div class="modal-header">'+
+        '<span>'+(g?'编辑客人':'添加客人')+'</span>'+
+        '<button class="modal-close" onclick="closeModal()">×</button>'+
+      '</div>'+
+      '<div class="modal-body">'+
+        '<div class="form-group">'+
+          '<label class="form-label">客人姓名 <span class="required">*</span></label>'+
+          '<input type="text" class="form-input" id="gName" value="'+(g?escapeHtml(g.name||''):'')+'" placeholder="必填">'+
+        '</div>'+
+        '<div class="form-row">'+
+          '<div class="form-group">'+
+            '<label class="form-label">小红书ID</label>'+
+            '<input type="text" class="form-input" id="gXhs" value="'+(g?escapeHtml(g.xhsId||''):'')+'">'+
+          '</div>'+
+          '<div class="form-group">'+
+            '<label class="form-label">微信ID</label>'+
+            '<input type="text" class="form-input" id="gWx" value="'+(g?escapeHtml(g.wxId||''):'')+'">'+
+          '</div>'+
+        '</div>'+
+        '<div class="form-row">'+
+          '<div class="form-group">'+
+            '<label class="form-label">电话号码</label>'+
+            '<input type="tel" class="form-input" id="gPhone" value="'+(g?escapeHtml(g.phone||''):'')+'">'+
+          '</div>'+
+          '<div class="form-group">'+
+            '<label class="form-label">孩子年龄</label>'+
+            '<input type="number" class="form-input" id="gAge" value="'+(g?escapeHtml(g.childAge||''):'')+'" min="3" max="12" placeholder="3-12">'+
+          '</div>'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">孩子姓名</label>'+
+          '<input type="text" class="form-input" id="gChild" value="'+(g?escapeHtml(g.childName||''):'')+'">'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">备注</label>'+
+          '<textarea class="form-textarea" id="gNotes" placeholder="特殊需求、注意事项等">'+(g?escapeHtml(g.notes||''):'')+'</textarea>'+
+        '</div>'+
+      '</div>'+
+      '<div class="modal-footer">'+
+        '<button class="btn btn-outline" onclick="closeModal()">取消</button>'+
+        '<button class="btn btn-primary" onclick="saveGuest()">保存</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+  document.getElementById('modalContainer').innerHTML=html;
+}
+function saveGuest(){
+  var name=document.getElementById('gName').value.trim();
+  if(!name){alert('请填写客人姓名');return;}
+  var obj={
+    id:editingGuestId||('g_'+Date.now()+'_'+Math.random().toString(36).substr(2,5)),
+    name:name,
+    xhsId:document.getElementById('gXhs').value.trim(),
+    wxId:document.getElementById('gWx').value.trim(),
+    phone:document.getElementById('gPhone').value.trim(),
+    childAge:document.getElementById('gAge').value.trim(),
+    childName:document.getElementById('gChild').value.trim(),
+    notes:document.getElementById('gNotes').value.trim()
+  };
+  if(editingGuestId){
+    var idx=DATA.guests.findIndex(function(x){return x.id===editingGuestId;});
+    if(idx>=0)DATA.guests[idx]=obj;
+  }else{
+    DATA.guests.push(obj);
+  }
+  saveData();
+  closeModal();
+  renderGuests();
+}
+function deleteGuest(id){
+  if(!confirm('确认删除这位客人吗？关联的排班记录中的客人关联将被清除。'))return;
+  DATA.guests=DATA.guests.filter(function(g){return g.id!==id;});
+  // clear guestId in schedules
+  for(var d in DATA.schedules){
+    DATA.schedules[d].forEach(function(s){if(s.guestId===id)s.guestId='';});
+  }
+  saveData();
+  renderGuests();
+}
+
+/* ===== Sports ===== */
+var currentAgeFilter='all';
+var currentVenueFilter='all';
+var currentEquipFilter='all';
+function renderAgeTabs(){
+  var tabs=document.getElementById('ageTabs');
+  var groups=[
+    {key:'all',label:'全部'},
+    {key:'3-6',label:'3-6岁'},
+    {key:'7-9',label:'7-9岁'},
+    {key:'10-12',label:'10-12岁'}
+  ];
+  tabs.innerHTML='<span class="filter-label">年龄</span>';
+  groups.forEach(function(g){
+    var t=document.createElement('div');
+    t.className='filter-tab'+(currentAgeFilter===g.key?' active':'');
+    t.textContent=g.label;
+    t.onclick=function(){currentAgeFilter=g.key;renderSports();};
+    tabs.appendChild(t);
+  });
+}
+function renderVenueTabs(){
+  var tabs=document.getElementById('venueTabs');
+  var venues=[
+    {key:'all',label:'全部'},
+    {key:'室内',label:'室内'},
+    {key:'室外',label:'室外'}
+  ];
+  var equips=[
+    {key:'all',label:'全部'},
+    {key:'无器械',label:'无器械'},
+    {key:'需器械',label:'需器械'}
+  ];
+  tabs.innerHTML='';
+  // venue group
+  var vg=document.createElement('span');
+  vg.className='filter-label';
+  vg.textContent='场景';
+  tabs.appendChild(vg);
+  venues.forEach(function(v){
+    var t=document.createElement('div');
+    t.className='filter-tab'+(currentVenueFilter===v.key?' active':'');
+    t.textContent=v.label;
+    t.onclick=function(){currentVenueFilter=v.key;renderSports();};
+    tabs.appendChild(t);
+  });
+  // separator
+  var sep=document.createElement('span');
+  sep.style.cssText='width:1px;height:20px;background:var(--border);margin:0 4px';
+  tabs.appendChild(sep);
+  // equipment group
+  var eg=document.createElement('span');
+  eg.className='filter-label';
+  eg.textContent='器械';
+  tabs.appendChild(eg);
+  equips.forEach(function(e){
+    var t=document.createElement('div');
+    t.className='filter-tab'+(currentEquipFilter===e.key?' active':'');
+    t.textContent=e.label;
+    t.onclick=function(){currentEquipFilter=e.key;renderSports();};
+    tabs.appendChild(t);
+  });
+}
+function renderSports(){
+  renderAgeTabs();
+  renderVenueTabs();
+  var grid=document.getElementById('sportsGrid');
+  var all=getAllSports();
+  var list=all.filter(function(s){
+    if(currentAgeFilter!=='all'){
+      var parts=currentAgeFilter.split('-');
+      if(!(s.ageMin>=parseInt(parts[0])&&s.ageMax<=parseInt(parts[1])))return false;
+    }
+    if(currentVenueFilter!=='all'&&s.venue!==currentVenueFilter)return false;
+    if(currentEquipFilter!=='all'&&s.equipment!==currentEquipFilter)return false;
+    return true;
+  });
+  if(list.length===0){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="icon">⚽</div><p>当前筛选条件下暂无运动推荐</p></div>';
+    return;
+  }
+  grid.innerHTML='';
+  list.forEach(function(s){
+    var isCustom=s.isCustom||DATA.customSports&&DATA.customSports.indexOf(s)>=0;
+    var venueCls=s.venue==='室内'?'venue-indoor':'venue-outdoor';
+    var equipCls=s.equipment==='无器械'?'equip-none':'equip-need';
+    var card=document.createElement('div');
+    card.className='sport-card';
+    var metaHtml='';
+    if(s.duration){
+      metaHtml+='<div class="meta-item"><span class="meta-icon">⏱️</span><span class="meta-val">'+escapeHtml(s.duration)+'</span></div>';
+    }
+    if(s.frequency){
+      metaHtml+='<div class="meta-item"><span class="meta-icon">📊</span><span class="meta-val">'+escapeHtml(s.frequency)+'</span></div>';
+    }
+    card.innerHTML=
+      '<h4>'+escapeHtml(s.name)+'</h4>'+
+      '<div class="age-range">适合 '+s.ageMin+'-'+s.ageMax+' 岁</div>'+
+      '<div class="tag-row">'+
+        '<span class="venue-tag '+venueCls+'">'+escapeHtml(s.venue||'未知')+'</span>'+
+        '<span class="equip-tag '+equipCls+'">'+escapeHtml(s.equipment||'未知')+'</span>'+
+        '<span class="cat-tag">'+escapeHtml(s.cat||'综合')+'</span>'+
+      '</div>'+
+      (metaHtml?'<div class="meta-row">'+metaHtml+'</div>':'')+
+      '<div class="desc">'+escapeHtml(s.desc)+'</div>'+
+      (isCustom?'<div style="margin-top:10px;display:flex;gap:6px">'+
+        '<button class="btn btn-outline btn-sm" onclick="openSportModal(\''+s.id+'\')">编辑</button>'+
+        '<button class="btn btn-danger btn-sm" onclick="deleteSport(\''+s.id+'\')">删除</button>'+
+      '</div>':'');
+    grid.appendChild(card);
+  });
+}
+var editingSportId=null;
+function openSportModal(id){
+  editingSportId=id||null;
+  var s=null;
+  if(id){
+    var all=getAllSports();
+    s=all.find(function(x){return x.id===id;});
+  }
+  var html='<div class="modal-overlay" onclick="if(event.target===this)closeModal()">'+
+    '<div class="modal">'+
+      '<div class="modal-header">'+
+        '<span>'+(s?'编辑运动':'添加运动')+'</span>'+
+        '<button class="modal-close" onclick="closeModal()">×</button>'+
+      '</div>'+
+      '<div class="modal-body">'+
+        '<div class="form-group">'+
+          '<label class="form-label">运动名称 <span class="required">*</span></label>'+
+          '<input type="text" class="form-input" id="sName" value="'+(s?escapeHtml(s.name||''):'')+'" placeholder="如：波比跳">'+
+        '</div>'+
+        '<div class="form-row">'+
+          '<div class="form-group">'+
+            '<label class="form-label">最小年龄 <span class="required">*</span></label>'+
+            '<input type="number" class="form-input" id="sAgeMin" value="'+(s?s.ageMin||'':'')+'" min="3" max="12">'+
+          '</div>'+
+          '<div class="form-group">'+
+            '<label class="form-label">最大年龄 <span class="required">*</span></label>'+
+            '<input type="number" class="form-input" id="sAgeMax" value="'+(s?s.ageMax||'':'')+'" min="3" max="12">'+
+          '</div>'+
+        '</div>'+
+        '<div class="form-row">'+
+          '<div class="form-group">'+
+            '<label class="form-label">运动场景 <span class="required">*</span></label>'+
+            '<select class="form-select" id="sVenue">'+
+              '<option value="室内"'+(s&&s.venue==='室内'?' selected':'')+'>室内</option>'+
+              '<option value="室外"'+(s&&s.venue==='室外'?' selected':'')+'>室外</option>'+
+            '</select>'+
+          '</div>'+
+          '<div class="form-group">'+
+            '<label class="form-label">器械需求 <span class="required">*</span></label>'+
+            '<select class="form-select" id="sEquip">'+
+              '<option value="无器械"'+(s&&s.equipment==='无器械'?' selected':'')+'>无器械</option>'+
+              '<option value="需器械"'+(s&&s.equipment==='需器械'?' selected':'')+'>需器械</option>'+
+            '</select>'+
+          '</div>'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">运动分类</label>'+
+          '<select class="form-select" id="sCat"></select>'+
+        '</div>'+
+        '<div class="form-row">'+
+          '<div class="form-group">'+
+            '<label class="form-label">推荐时间/运动量</label>'+
+            '<input type="text" class="form-input" id="sDuration" value="'+(s?escapeHtml(s.duration||''):'')+'" placeholder="如：15-20分钟">'+
+          '</div>'+
+          '<div class="form-group">'+
+            '<label class="form-label">推荐频率</label>'+
+            '<input type="text" class="form-input" id="sFrequency" value="'+(s?escapeHtml(s.frequency||''):'')+'" placeholder="如：每天1次">'+
+          '</div>'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">运动描述</label>'+
+          '<textarea class="form-textarea" id="sDesc" placeholder="详细描述运动内容、锻炼效果和注意事项">'+(s?escapeHtml(s.desc||''):'')+'</textarea>'+
+        '</div>'+
+      '</div>'+
+      '<div class="modal-footer">'+
+        '<button class="btn btn-outline" onclick="closeModal()">取消</button>'+
+        '<button class="btn btn-primary" onclick="saveSport()">保存</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+  document.getElementById('modalContainer').innerHTML=html;
+  var sel=document.getElementById('sCat');
+  var cats=['协调','力量','平衡','耐力','柔韧','球类','水中','综合'];
+  sel.innerHTML='';
+  cats.forEach(function(c){
+    var opt=document.createElement('option');
+    opt.value=c;opt.textContent=c;
+    if(s&&s.cat===c)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+function saveSport(){
+  var name=document.getElementById('sName').value.trim();
+  var ageMin=parseInt(document.getElementById('sAgeMin').value);
+  var ageMax=parseInt(document.getElementById('sAgeMax').value);
+  var venue=document.getElementById('sVenue').value;
+  var equipment=document.getElementById('sEquip').value;
+  var cat=document.getElementById('sCat').value;
+  var duration=document.getElementById('sDuration').value.trim();
+  var frequency=document.getElementById('sFrequency').value.trim();
+  var desc=document.getElementById('sDesc').value.trim();
+  if(!name){alert('请填写运动名称');return;}
+  if(!ageMin||!ageMax||ageMin<3||ageMax>12||ageMin>ageMax){alert('请填写正确的年龄范围(3-12)');return;}
+  var obj={id:editingSportId||('s_'+Date.now()),name:name,ageMin:ageMin,ageMax:ageMax,venue:venue,equipment:equipment,cat:cat,duration:duration,frequency:frequency,desc:desc,isCustom:true};
+  if(!DATA.customSports)DATA.customSports=[];
+  if(editingSportId){
+    var idx=DATA.customSports.findIndex(function(x){return x.id===editingSportId;});
+    if(idx>=0)DATA.customSports[idx]=obj;
+  }else{
+    DATA.customSports.push(obj);
+  }
+  saveData();
+  closeModal();
+  renderSports();
+}
+function deleteSport(id){
+  if(!confirm('确认删除这条运动推荐吗？'))return;
+  if(DATA.customSports){
+    DATA.customSports=DATA.customSports.filter(function(s){return s.id!==id;});
+    saveData();
+    renderSports();
+  }
+}
+
+/* ===== Attractions ===== */
+var currentAttnVenueFilter='all';
+var currentAttnTicketFilter='all';
+function renderAttnFilterTabs(){
+  var tabs=document.getElementById('attnFilterTabs');
+  if(!tabs)return;
+  var venues=[
+    {key:'all',label:'全部'},
+    {key:'室内',label:'室内'},
+    {key:'室外',label:'室外'}
+  ];
+  var tickets=[
+    {key:'all',label:'全部'},
+    {key:'免费',label:'免费'},
+    {key:'收费',label:'收费'}
+  ];
+  tabs.innerHTML='';
+  // venue group
+  var vg=document.createElement('span');
+  vg.className='filter-label';
+  vg.textContent='场景';
+  tabs.appendChild(vg);
+  venues.forEach(function(v){
+    var t=document.createElement('div');
+    t.className='filter-tab'+(currentAttnVenueFilter===v.key?' active':'');
+    t.textContent=v.label;
+    t.onclick=function(){currentAttnVenueFilter=v.key;renderAttractions(currentAttnSearchKW);};
+    tabs.appendChild(t);
+  });
+  var sep=document.createElement('span');
+  sep.style.cssText='width:1px;height:20px;background:var(--border);margin:0 4px';
+  tabs.appendChild(sep);
+  var tg=document.createElement('span');
+  tg.className='filter-label';
+  tg.textContent='门票';
+  tabs.appendChild(tg);
+  tickets.forEach(function(tk){
+    var t=document.createElement('div');
+    t.className='filter-tab'+(currentAttnTicketFilter===tk.key?' active':'');
+    t.textContent=tk.label;
+    t.onclick=function(){currentAttnTicketFilter=tk.key;renderAttractions(currentAttnSearchKW);};
+    tabs.appendChild(t);
+  });
+}
+var currentAttnSearchKW='';
+function renderAttractions(keyword){
+  currentAttnSearchKW=keyword||'';
+  renderAttnFilterTabs();
+  var grid=document.getElementById('attnGrid');
+  var all=getAllAttractions();
+  var list=all;
+  // search filter
+  if(currentAttnSearchKW){
+    var kw=currentAttnSearchKW.toLowerCase();
+    list=list.filter(function(a){
+      return (a.name||'').toLowerCase().indexOf(kw)>=0||
+             (a.address||'').toLowerCase().indexOf(kw)>=0||
+             (a.location||'').toLowerCase().indexOf(kw)>=0||
+             (a.tags||[]).join(',').toLowerCase().indexOf(kw)>=0||
+             (a.desc||'').toLowerCase().indexOf(kw)>=0;
+    });
+  }
+  // venue filter (indoor/outdoor from tags)
+  if(currentAttnVenueFilter!=='all'){
+    list=list.filter(function(a){
+      var tags=(a.tags||[]).join(',');
+      if(currentAttnVenueFilter==='室内')return tags.indexOf('室内')>=0;
+      if(currentAttnVenueFilter==='室外')return tags.indexOf('户外')>=0||tags.indexOf('室外')>=0;
+      return true;
+    });
+  }
+  // ticket filter
+  if(currentAttnTicketFilter!=='all'){
+    list=list.filter(function(a){
+      var tk=(a.ticket||'').toLowerCase();
+      if(currentAttnTicketFilter==='免费')return tk.indexOf('免费')>=0;
+      if(currentAttnTicketFilter==='收费')return tk&&tk.indexOf('免费')<0;
+      return true;
+    });
+  }
+  if(list.length===0){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="icon">🏞️</div><p>'+(currentAttnSearchKW?'未找到匹配的景点':'暂无景点数据')+'</p></div>';
+    return;
+  }
+  grid.innerHTML='';
+  list.forEach(function(a){
+    var isCustom=a.isCustom||DATA.customAttractions&&DATA.customAttractions.indexOf(a)>=0;
+    var tagsHtml='';
+    (a.tags||[]).forEach(function(t){
+      tagsHtml+='<span class="attn-tag">'+escapeHtml(t)+'</span>';
+    });
+    // build meta row
+    var metaHtml='';
+    if(a.ticket){
+      var tknCls=a.ticket.indexOf('免费')>=0?'ticket-free':'';
+      metaHtml+='<div class="meta-item"><span class="meta-icon">🎫</span><span class="meta-val '+tknCls+'">'+escapeHtml(a.ticket)+'</span></div>';
+    }
+    if(a.duration)metaHtml+='<div class="meta-item"><span class="meta-icon">⏱️</span><span class="meta-val">'+escapeHtml(a.duration)+'</span></div>';
+    if(a.bestTime)metaHtml+='<div class="meta-item"><span class="meta-icon">🌤️</span><span class="meta-val">'+escapeHtml(a.bestTime)+'</span></div>';
+    // nav link
+    var navUrl='';
+    if(a.lat&&a.lng){
+      navUrl='https://uri.amap.com/m/marker?position='+a.lng+','+a.lat+'&name='+encodeURIComponent(a.name)+'&coordinate=wgs84&callnative=1';
+    }else if(a.address){
+      navUrl='https://uri.amap.com/m/marker?name='+encodeURIComponent(a.name)+'&address='+encodeURIComponent(a.address)+'&callnative=1';
+    }
+    var card=document.createElement('div');
+    card.className='attn-card';
+    card.innerHTML=
+      '<div class="attn-card-body">'+
+        '<h4>'+escapeHtml(a.name)+
+          (isCustom?'<span style="font-size:11px;color:var(--primary);font-weight:400;background:var(--primary-bg);padding:1px 6px;border-radius:8px">自定义</span>':'')+
+        '</h4>'+
+        '<div class="attn-tags">'+tagsHtml+'</div>'+
+        (metaHtml?'<div class="attn-meta">'+metaHtml+'</div>':'')+
+        (a.highlights?'<div class="attn-highlights">✨ '+escapeHtml(a.highlights)+'</div>':'')+
+        '<div class="location">📍 '+escapeHtml(a.address||a.location||'')+'</div>'+
+        '<div class="age-suit">适合 '+a.ageMin+'-'+a.ageMax+' 岁</div>'+
+        '<div class="desc">'+escapeHtml(a.desc)+'</div>'+
+        (a.tips?'<div class="attn-tips">💡 '+escapeHtml(a.tips)+'</div>':'')+
+        '<div class="attn-actions">'+
+          (navUrl?'<a class="attn-nav-btn" href="'+navUrl+'" target="_blank" rel="noopener">🧭 导航前往</a>':'')+
+        '</div>'+
+        (isCustom?'<div class="attn-edit-actions">'+
+          '<button class="btn btn-outline btn-sm" onclick="openAttnModal(\''+a.id+'\')">编辑</button>'+
+          '<button class="btn btn-danger btn-sm" onclick="deleteAttn(\''+a.id+'\')">删除</button>'+
+        '</div>':'')+
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+var editingAttnId=null;
+function openAttnModal(id){
+  editingAttnId=id||null;
+  var a=null;
+  if(id){
+    var all=getAllAttractions();
+    a=all.find(function(x){return x.id===id;});
+  }
+  var html='<div class="modal-overlay" onclick="if(event.target===this)closeModal()">'+
+    '<div class="modal">'+
+      '<div class="modal-header">'+
+        '<span>'+(a?'编辑景点':'添加景点')+'</span>'+
+        '<button class="modal-close" onclick="closeModal()">×</button>'+
+      '</div>'+
+      '<div class="modal-body">'+
+        '<div class="form-group">'+
+          '<label class="form-label">景点名称 <span class="required">*</span></label>'+
+          '<input type="text" class="form-input" id="aName" value="'+(a?escapeHtml(a.name||''):'')+'" placeholder="如：苏州博物馆">'+
+        '</div>'+
+        '<div class="form-row">'+
+          '<div class="form-group">'+
+            '<label class="form-label">最小年龄 <span class="required">*</span></label>'+
+            '<input type="number" class="form-input" id="aAgeMin" value="'+(a?a.ageMin||'':'3')+'" min="3" max="12">'+
+          '</div>'+
+          '<div class="form-group">'+
+            '<label class="form-label">最大年龄 <span class="required">*</span></label>'+
+            '<input type="number" class="form-input" id="aAgeMax" value="'+(a?a.ageMax||'':'12')+'" min="3" max="12">'+
+          '</div>'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">位置/区域</label>'+
+          '<input type="text" class="form-input" id="aLocation" value="'+(a?escapeHtml(a.location||''):'')+'" placeholder="如：姑苏区">'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">详细地址 <span style="color:var(--text-sub);font-weight:400">(用于导航)</span></label>'+
+          '<input type="text" class="form-input" id="aAddress" value="'+(a?escapeHtml(a.address||''):'')+'" placeholder="如：姑苏区东北街204号">'+
+        '</div>'+
+        '<div class="form-row">'+
+          '<div class="form-group">'+
+            '<label class="form-label">纬度 <span style="color:var(--text-sub);font-weight:400">(选填)</span></label>'+
+            '<input type="text" class="form-input" id="aLat" value="'+(a?escapeHtml(a.lat||''):'')+'" placeholder="如：31.3242">'+
+          '</div>'+
+          '<div class="form-group">'+
+            '<label class="form-label">经度 <span style="color:var(--text-sub);font-weight:400">(选填)</span></label>'+
+            '<input type="text" class="form-input" id="aLng" value="'+(a?escapeHtml(a.lng||''):'')+'" placeholder="如：120.6289">'+
+          '</div>'+
+        '</div>'+
+        '<div class="form-row">'+
+          '<div class="form-group">'+
+            '<label class="form-label">门票</label>'+
+            '<input type="text" class="form-input" id="aTicket" value="'+(a?escapeHtml(a.ticket||''):'')+'" placeholder="如：免费 / 70元">'+
+          '</div>'+
+          '<div class="form-group">'+
+            '<label class="form-label">推荐时长</label>'+
+            '<input type="text" class="form-input" id="aDuration" value="'+(a?escapeHtml(a.duration||''):'')+'" placeholder="如：半天 / 2-3小时">'+
+          '</div>'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">最佳时间</label>'+
+          '<input type="text" class="form-input" id="aBestTime" value="'+(a?escapeHtml(a.bestTime||''):'')+'" placeholder="如：春秋季 / 傍晚">'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">标签 <span style="color:var(--text-sub);font-weight:400">(逗号分隔)</span></label>'+
+          '<input type="text" class="form-input" id="aTags" value="'+(a?(a.tags||[]).join(','):'')+'" placeholder="如：户外,亲子,免费">'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">特色亮点</label>'+
+          '<input type="text" class="form-input" id="aHighlights" value="'+(a?escapeHtml(a.highlights||''):'')+'" placeholder="如：音乐喷泉、环湖骑行">'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">景点描述</label>'+
+          '<textarea class="form-textarea" id="aDesc" placeholder="适合儿童的特点介绍">'+(a?escapeHtml(a.desc||''):'')+'</textarea>'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="form-label">出行提示</label>'+
+          '<textarea class="form-textarea" id="aTips" placeholder="停车、防蚊、穿着建议等">'+(a?escapeHtml(a.tips||''):'')+'</textarea>'+
+        '</div>'+
+      '</div>'+
+      '<div class="modal-footer">'+
+        '<button class="btn btn-outline" onclick="closeModal()">取消</button>'+
+        '<button class="btn btn-primary" onclick="saveAttn()">保存</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+  document.getElementById('modalContainer').innerHTML=html;
+}
+function saveAttn(){
+  var name=document.getElementById('aName').value.trim();
+  var ageMin=parseInt(document.getElementById('aAgeMin').value);
+  var ageMax=parseInt(document.getElementById('aAgeMax').value);
+  var location=document.getElementById('aLocation').value.trim();
+  var address=document.getElementById('aAddress').value.trim();
+  var latStr=document.getElementById('aLat').value.trim();
+  var lngStr=document.getElementById('aLng').value.trim();
+  var ticket=document.getElementById('aTicket').value.trim();
+  var duration=document.getElementById('aDuration').value.trim();
+  var bestTime=document.getElementById('aBestTime').value.trim();
+  var tagsStr=document.getElementById('aTags').value.trim();
+  var highlights=document.getElementById('aHighlights').value.trim();
+  var desc=document.getElementById('aDesc').value.trim();
+  var tips=document.getElementById('aTips').value.trim();
+  if(!name){alert('请填写景点名称');return;}
+  if(!ageMin||!ageMax||ageMin<3||ageMax>12||ageMin>ageMax){alert('请填写正确的年龄范围(3-12)');return;}
+  var tags=tagsStr?tagsStr.split(/[,，、]/).map(function(t){return t.trim();}).filter(Boolean):[];
+  var lat=latStr?parseFloat(latStr):null;
+  var lng=lngStr?parseFloat(lngStr):null;
+  var obj={id:editingAttnId||('a_'+Date.now()),name:name,location:location,address:address,lat:lat,lng:lng,ageMin:ageMin,ageMax:ageMax,ticket:ticket,duration:duration,bestTime:bestTime,highlights:highlights,desc:desc,tips:tips,tags:tags,isCustom:true};
+  if(!DATA.customAttractions)DATA.customAttractions=[];
+  if(editingAttnId){
+    var idx=DATA.customAttractions.findIndex(function(x){return x.id===editingAttnId;});
+    if(idx>=0)DATA.customAttractions[idx]=obj;
+  }else{
+    DATA.customAttractions.push(obj);
+  }
+  saveData();
+  closeModal();
+  renderAttractions(currentAttnSearchKW);
+}
+function deleteAttn(id){
+  if(!confirm('确认删除这个景点吗？'))return;
+  if(DATA.customAttractions){
+    DATA.customAttractions=DATA.customAttractions.filter(function(a){return a.id!==id;});
+    saveData();
+    renderAttractions();
+  }
+}
+
+/* ===== Utils ===== */
+function closeModal(){
+  document.getElementById('modalContainer').innerHTML='';
+}
+function escapeHtml(str){
+  if(str===null||str===undefined)return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape')closeModal();
+});
+
+/* ===== Init ===== */
+renderCalendar();
+renderGuests();
+renderSports();
+renderAttractions();
+
+/* ===== Service Worker ===== */
+if('serviceWorker'in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw-work.js').catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
